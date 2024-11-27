@@ -1,0 +1,78 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+import pyodbc
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Secret key for flash messages and session management
+
+# Function to establish a connection to SQL Server
+def get_db_connection(server, username, password):
+    try:
+        conn = pyodbc.connect(
+            f'DRIVER={{ODBC Driver 17 for SQL Server}};'
+            f'SERVER={server};'
+            f'UID={username};'
+            f'PWD={password}'
+        )
+        return conn
+    except Exception as e:
+        return None, str(e)
+
+# Route for the login page where the user enters SQL instance details
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        server = request.form['server']
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Connect to the SQL Server with provided credentials
+        connection, error = get_db_connection(server, username, password)
+        
+        if connection:
+            # Fetch the list of databases
+            cursor = connection.cursor()
+            cursor.execute("SELECT name FROM sys.databases")
+            databases = cursor.fetchall()
+            connection.close()
+            
+            # Save the connection details in the session and redirect to the dashboard
+            session['server'] = server
+            session['username'] = username
+            session['password'] = password
+            session['databases'] = [db[0] for db in databases]
+            return redirect(url_for('dashboard'))
+        else:
+            flash(f"Connection failed: {error}", 'danger')
+    
+    return render_template('login.html')
+
+# Route for the dashboard
+@app.route('/dashboard', methods=['GET', 'POST'])
+def dashboard():
+    if 'databases' not in session:
+        return redirect(url_for('login'))
+    
+    databases = session['databases']
+    
+    if request.method == 'POST':
+        # Handle the SQL query execution
+        query = request.form['query']
+        selected_db = request.form['database']
+        
+        # Establish connection with the selected database
+        connection = get_db_connection(session['server'], session['username'], session['password'])[0]
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute(f"USE {selected_db}")
+            try:
+                cursor.execute(query)
+                connection.commit()
+                flash("Query executed successfully!", 'success')
+            except Exception as e:
+                flash(f"Error: {str(e)}", 'danger')
+            connection.close()
+    
+    return render_template('dashboard.html', databases=databases)
+
+if __name__ == '__main__':
+    app.run(debug=True)

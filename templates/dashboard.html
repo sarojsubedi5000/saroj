@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f8fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1, h2 {
+            color: #4facfe;
+            text-align: center;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        label, select, button {
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            padding: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            background: #fff;
+            border-radius: 10px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #4facfe;
+            color: white;
+
+        }
+        .STB{background-color: #4facfe}
+        .TG{background-color: red;}
+        .BD{background-color: green;}
+        .DV{background-color: yellow;}
+        .RI{background-color: aquamarine;}
+    </style>
+</head>
+<body>
+    <h1>Database Dashboard</h1>
+
+    <form method="POST" action="/select_db">
+        <label for="database">Select Database:</label>
+        <select id="database" name="database">
+            {% for db in databases %}
+                <option value="{{ db }}" {% if db == selected_database %}selected{% endif %}>
+                    {{ db }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Use Database</button>
+    </form>
+
+    <h2>Actions</h2>
+    <form method="POST" action="/dashboard">
+        <button name="action" class="RI" value="alter_table">Registarion Issue</button>
+        <button name="action" class="DV" value="sales_ird">Remove Duplicates Sales_Ird</button>
+        <button name="action" class="BD" value="backdate">Backup Date Issue</button>
+        <button name="action" class="TG" value="Trigger">Drop Trigger x2</button>
+        <button name="action" class="STB" value="stockqty"> Update sales_Details QTY=StockQty</button>
+        <button name="action" class="bd" value="Opening"> Error on CU/VE Opening Entry</button>
+    </form>
+
+    {% if result_message %}
+        <p><strong>{{ result_message }}</strong></p>
+    {% endif %}
+
+    {% if query_result %}
+        <table>
+            <thead>
+                <tr>
+                    {% for header in headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in query_result %}
+                    <tr>
+                        {% for col in row %}
+                            <td>{{ col }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+</html>
